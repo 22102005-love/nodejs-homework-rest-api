@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const { Schema, model } = mongoose;
+const { Schema, model, SchemaTypes } = mongoose;
+
 const contactSchema = new Schema(
   {
     name: {
@@ -16,9 +17,9 @@ const contactSchema = new Schema(
       required: [true, "Set phone for contact"],
       validate: {
         validator: function (v) {
-          return (/\d{3}-\d{3}-\d{4}/.test(v));
+          return /\d{3}-\d{3}-\d{4}/.test(v);
         },
-        message: props => `${props.value} is not a valid phone format!`
+        message: (props) => `${props.value} is not a valid phone format!`,
       },
     },
     subscription: {
@@ -30,6 +31,10 @@ const contactSchema = new Schema(
     },
     token: {
       type: String,
+    },
+    owner: {
+      type: SchemaTypes.ObjectId,
+      ref: "user",
     },
   },
   { versionKey: false, timestamps: true }
