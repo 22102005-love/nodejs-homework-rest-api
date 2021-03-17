@@ -1,11 +1,17 @@
 const express = require('express')
 const logger = require('morgan')
 const cors = require('cors')
+// const path = require('path')
+// require('dotenv').config()
 
 const contactsRouter = require('./routes/api/contacts/contacts')
 const usersRouter=require('./routes/api/users/users.js')
 
 const app = express()
+
+app.use(express.static('useravatars'))
+
+// app.use(express.static(path.join(__dirname, AVATARS_OF_USERS)))
 
 const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
 

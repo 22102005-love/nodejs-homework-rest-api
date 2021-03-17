@@ -1,7 +1,12 @@
 const jwt = require("jsonwebtoken");
 const Users = require("../model/users");
-const { HttpCode } = require("../helpers/constants");
+const fs = require('fs').promises
+const path = require('path')
 require("dotenv").config();
+
+const { HttpCode } = require("../helpers/constants");
+const createFolderIsExist=require('../helpers/create-dir')
+
 const SECRET_KEY = process.env.JWT_SECRET;
 
 const reg = async (req, res, next) => {
@@ -24,6 +29,7 @@ const reg = async (req, res, next) => {
         // id: newUser.id,
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL:newUser.avatarURL,
       },
     });
   } catch (err) {
@@ -96,4 +102,39 @@ const currentUser = async (req, res, next) => {
   }
 };
 
-module.exports = { reg, login, logout, currentUser };
+const updateUser = async (req, res, next)=>{
+  try {
+    const id = req.user.id
+    const avatarUrl = await saveAvatarToStatic(req)
+    await Users.updateAvatar(id, avatarUrl)
+    return res.json({
+      status: 'success',
+      code: HttpCode.OK,
+      data: {
+        ...req.body,
+        avatarUrl,
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+const saveAvatarToStatic = async (req) => {
+  const id = req.user.id
+  const AVATARS_OF_USERS = process.env.AVATARS_OF_USERS
+  const pathFile = req.file.path
+  const avatarName = req.file.originalname
+  const folderForUserAvatar = id
+  await createFolderIsExist(path.join(AVATARS_OF_USERS, folderForUserAvatar))
+  await fs.rename(pathFile, path.join(AVATARS_OF_USERS, folderForUserAvatar, avatarName))
+  const avatarURL = path.normalize(path.join(id, avatarName))
+  try {
+    await fs.unlink(path.join(process.cwd(),AVATARS_OF_USERS,req.user.avatar))
+  } catch (err) {
+    console.log(err.message)
+  }
+  return avatarURL
+}
+
+module.exports = { reg, login, logout, currentUser, updateUser };
