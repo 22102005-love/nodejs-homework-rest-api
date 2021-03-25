@@ -8,13 +8,21 @@ const findById = async (id) => {
     return await User.findOne({_id:id})
 }
 
-const create = async ({ email, password }) => {
-    const user = new User({ email, password })
+const findeByVerifyToken = async (verifyToken) => {
+    return await User.findOne({verifyToken})
+}
+
+const create = async ({ email, password,verify,verifyToken }) => {
+    const user = new User({ email, password,verify,verifyToken })
     return await user.save()
 }
 
 const updateToken = async (id, token) => {
     return await User.updateOne({_id:id},{token})
+}
+
+const updateVerifyToken = async (id, verify,verifyToken) => {
+    return await User.updateOne({_id:id},{ verify, verifyToken })
 }
 
 const updateAvatar = async (id, avatarURL) => {
@@ -25,7 +33,9 @@ const updateAvatar = async (id, avatarURL) => {
 module.exports = {
     findByEmail,
     findById,
+    findeByVerifyToken,
     create,
     updateToken,
+    updateVerifyToken,
     updateAvatar,
 }
