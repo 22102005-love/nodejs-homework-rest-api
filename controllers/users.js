@@ -2,9 +2,11 @@ const jwt = require("jsonwebtoken");
 const Users = require("../model/users");
 const fs = require('fs').promises
 const path = require('path')
+const {nanoid}=require('nanoid')
 require("dotenv").config();
 
-const { HttpCode } = require("../helpers/constants");
+const { HttpCode } = require("../helpers/constants")
+const EmailService = require('../services/email')
 const createFolderIsExist=require('../helpers/create-dir')
 
 const SECRET_KEY = process.env.JWT_SECRET;
@@ -21,7 +23,15 @@ const reg = async (req, res, next) => {
         message: "Email already use",
       });
     }
-    const newUser = await Users.create(req.body);
+    const verifyToken = nanoid()
+    const emailService = new EmailService(process.env.NODE_ENV)
+    await emailService.sendEmail(verifyToken, email)
+    
+    const newUser = await Users.create({
+      ...req.body,
+      verify: false,
+      verifyToken,
+    });
     return res.status(HttpCode.CREATED).json({
       status: "success",
       code: HttpCode.CREATED,
@@ -32,6 +42,7 @@ const reg = async (req, res, next) => {
         avatarURL:newUser.avatarURL,
       },
     });
+     
   } catch (err) {
     next(err);
   }
@@ -137,4 +148,26 @@ const saveAvatarToStatic = async (req) => {
   return avatarURL
 }
 
-module.exports = { reg, login, logout, currentUser, updateUser };
+const verify = async (req, res, next) => {
+  try {
+    const user = await Users.findeByVerifyToken(req.params.verifyToken)
+    if (user) {
+      await Users.updateVerifyToken(user.id, true, null)
+      return res.json({
+        status: 'success',
+        code: HttpCode.OK,
+        message:'Verification passed successfully!',
+      })
+    }
+    return res.status(HttpCode.BAD_REQUEST).json({
+      status: 'error',
+      code: HttpCode.BAD_REQUEST,
+      data: 'Bad request',
+      massage:'Link is not valid',
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = { reg, login, logout, currentUser, updateUser, verify };
